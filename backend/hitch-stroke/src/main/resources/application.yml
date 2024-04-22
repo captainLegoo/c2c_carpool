@@ -1,6 +1,6 @@
 spring:
   rabbitmq:
-    host: 192.168.64.100
+    host: 192.168.205.128
     port: 5672
     username: guest
     password: guest
@@ -33,8 +33,8 @@ spring:
 #      #      value-deserializer: com.itheima.demo.config.MyDeserializer
 #      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   redis:
-    host: 192.168.64.100
-    port: 6379
+    host: 192.168.205.128
+    port: 16379
     timeout: 1000
     jedis:
       pool:
@@ -44,7 +44,7 @@ spring:
         min-idle: 0
   data:
     mongodb:
-      host: 192.168.64.100
+      host: 192.168.205.128
       port: 27017
       database: location
 baidu:
