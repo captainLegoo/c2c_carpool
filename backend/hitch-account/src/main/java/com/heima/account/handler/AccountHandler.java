@@ -18,15 +18,11 @@ import com.heima.modules.po.VehiclePO;
 import com.heima.modules.vo.AccountVO;
 import com.heima.modules.vo.AuthenticationVO;
 import com.heima.modules.vo.VehicleVO;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.io.File;
-import java.net.URL;
 
 @Component
 public class AccountHandler {
@@ -83,15 +79,37 @@ public class AccountHandler {
      * @return
      */
     public ResponseVO<AccountVO> modifyPassword(AccountVO accountVO) {
-        //获取当前登录用户的id
+        // 校验参数是否为空
+        if (StringUtils.isAnyEmpty(accountVO.getPassword(), accountVO.getNewPassword())) {
+            throw new BusinessRuntimeException(BusinessErrors.PARAM_CANNOT_EMPTY);
+        }
+
+        // 0.获取当前登录用户的id
         String userid = accountVO.getCurrentUserId();
-        //TODO:任务1-修改密码-1day
-        //获取当前用户在数据库里的信息
-        //旧密码加密，对比数据库，防止输入错误
-        //新密码加密，对比旧密码，不允许相同
-        //校验通过，将新密码写入数据库，修改成功
 
+        // 1.获取当前用户在数据库里的密码
+        AccountPO accountPO = accountAPIService.getAccountByID(userid);
+        String passwordFromDb = accountPO.getPassword();
 
+        // 2.获取当前用户输入的旧密码和新密码
+        String passwordOld = CommonsUtils.encodeMD5(accountVO.getPassword());
+        String passwordNew = CommonsUtils.encodeMD5(accountVO.getNewPassword());
+
+        // 4.校验旧密码是否正确
+        if (!passwordOld.equals(passwordFromDb)) {
+            throw new BusinessRuntimeException(BusinessErrors.DATA_STATUS_ERROR, "旧密码错误");
+        }
+
+        // 5.校验新密码是否与旧密码相同
+        if (passwordOld.equals(passwordNew)) {
+            throw new BusinessRuntimeException(BusinessErrors.DATA_DUPLICATION, "新密码不能与旧密码相同");
+        }
+
+        // 6.校验通过，将新密码写入数据库，修改成功
+        accountPO.setPassword(passwordNew);
+        accountAPIService.update(accountPO);
+
+        // 7.返回结果
         return ResponseVO.success(null, "修改密码成功");
     }
 
