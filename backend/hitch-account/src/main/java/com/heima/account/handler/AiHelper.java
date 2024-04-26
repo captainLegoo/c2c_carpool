@@ -1,9 +1,14 @@
 package com.heima.account.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heima.commons.enums.BusinessErrors;
 import com.heima.commons.exception.BusinessRuntimeException;
 import com.heima.modules.po.VehiclePO;
 import okhttp3.*;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,9 +16,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Base64;
 
 @Component
@@ -48,31 +58,44 @@ public class AiHelper {
 
     * */
     public String getLicense(VehiclePO vehiclePO) {
-        String carFrontPhotoURL = vehiclePO.getCarFrontPhoto();
-        //return getCarNumber(carFrontPhotoURL);
-        return "000000";
+        //String carFrontPhotoURL = vehiclePO.getCarFrontPhoto();
+        return getCarNumber(vehiclePO);
+        //return "000000";
     }
 
-    private String getCarNumber(String carFrontPhotoUrl) {
-        String fileContentAsBase64 = urlToBase64(carFrontPhotoUrl);
+    private String getCarNumber(VehiclePO vehiclePO) {
         try {
+            String front = vehiclePO.getCarFrontPhoto();
+            File tempFile = new File(AiHelper.class.getResource("/").getPath() + "front-" + vehiclePO.getId() + front.substring(front.lastIndexOf("."), front.length()));
+            logger.info("create tempfile:{}", tempFile.getAbsolutePath());
+            FileUtils.copyURLToFile(new URL(vehiclePO.getCarFrontPhoto()), tempFile);
             MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
-            RequestBody body = RequestBody.create(mediaType, "multi_detect=false&multi_scale=false&image=" + fileContentAsBase64);
+            String image = getFileContentAsBase64(tempFile.getAbsolutePath(), true);
+            RequestBody body = RequestBody.create(mediaType, "image=" + image);
             Request request = new Request.Builder()
                     .url("https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate?access_token=" + getAccessToken())
                     .method("POST", body)
                     .addHeader("Content-Type", "application/x-www-form-urlencoded")
                     .addHeader("Accept", "application/json")
                     .build();
-
             Response response = HTTP_CLIENT.newCall(request).execute();
-            String carNumber = new JSONObject(response.body().string()).getString("log_id").toString();
-            logger.debug("车牌识别结果：" + carNumber);
-            //return carNumber;
-            return "000000";
+            String json = response.body().string();
+            logger.info("get response from baiduAI:{}", json);
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(json);
+            if (rootNode.get("error_code") != null) {
+                throw new BusinessRuntimeException(BusinessErrors.DATA_STATUS_ERROR, rootNode.get("error_msg").asText());
+            }
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+            String text = rootNode.get("words_result").get("number").asText();
+            logger.info("return image text:{}", text);
+            return text;
         } catch (IOException e) {
-            throw new BusinessRuntimeException(BusinessErrors.AUTHENTICATION_ERROR);
+            throw new RuntimeException(e);
         }
+
     }
 
     /**
@@ -95,23 +118,19 @@ public class AiHelper {
     }
 
     /**
-     * 将 url文件 转成 base64
+     * 获取文件base64编码
      *
-     * @param fileURL minio文件url
-     * @return base64字符串
+     * @param path      文件路径
+     * @param urlEncode 如果Content-Type是application/x-www-form-urlencoded时,传true
+     * @return base64编码信息，不带文件头
+     * @throws IOException IO异常
      */
-    public String urlToBase64(String fileURL) {
-        try (InputStream inputStream = new URL(fileURL).openStream()) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            byte[] imageBytes = outputStream.toByteArray();
-            return Base64.getEncoder().encodeToString(imageBytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private String getFileContentAsBase64(String path, boolean urlEncode) throws IOException {
+        byte[] b = Files.readAllBytes(Paths.get(path));
+        String base64 = Base64.getEncoder().encodeToString(b);
+        if (urlEncode) {
+            base64 = URLEncoder.encode(base64, "utf-8");
         }
+        return base64;
     }
 }
