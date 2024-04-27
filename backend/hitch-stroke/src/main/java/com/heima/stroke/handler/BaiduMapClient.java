@@ -24,15 +24,11 @@ public class BaiduMapClient {
     //TODO:任务3.2-调百度路径计算两点间的距离，和预估抵达时长
     public RoutePlanResultBO pathPlanning(String origins, String destinations) {
         try {
-            logger.error("ak -> {}", this.ak);
-            logger.error("origin -> {}", origins);
-            logger.error("destinations -> {}", destinations);
             Map map = new HashMap();
             map.put("origins", origins);
             map.put("destinations", destinations);
             map.put("ak", this.ak);
             String result = HttpClientUtils.doGet(api, map);
-
             return extractResultInfo(result);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -61,7 +57,7 @@ public class BaiduMapClient {
         durationTextValue.setValue(durationValue);
         durationTextValue.setText(durationText);
         routePlanResultBO.setDuration(durationTextValue);
-        logger.error("routePlanResultBO:" + routePlanResultBO);
+        logger.debug("routePlanResultBO: {}", routePlanResultBO);
 
         return routePlanResultBO;
     }
