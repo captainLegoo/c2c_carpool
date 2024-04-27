@@ -9,6 +9,9 @@ public class StartPriceValuation implements Valuation {
 
     @Override
     public float calculation(float km) {
-        return 0;
+        if (km <= 3) {
+            return valuation.calculation(km);
+        }
+        return (float) (valuation.calculation(km) + (km - 3) * 2.3);
     }
 }
