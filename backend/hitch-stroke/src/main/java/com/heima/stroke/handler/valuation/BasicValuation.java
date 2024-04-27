@@ -9,7 +9,6 @@ public class BasicValuation implements Valuation {
 
     @Override
     public float calculation(float km) {
-
-        return 0;
+        return 13;
     }
 }
