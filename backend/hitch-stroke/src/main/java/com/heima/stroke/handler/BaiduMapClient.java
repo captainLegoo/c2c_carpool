@@ -6,7 +6,6 @@ import com.heima.commons.domin.bo.TextValue;
 import com.heima.commons.utils.HttpClientUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -14,11 +13,12 @@ import java.util.Map;
 
 @Component
 public class BaiduMapClient {
-    @Value("${baidu.map.api}")
-    private String api;
-    @Value("${baidu.map.ak}")
-    private String ak;
-
+    //@Value("${baidu.map.api}")
+    //private String api;
+    //@Value("${baidu.map.ak}")
+    //private String ak;
+    private static final String api = "https://api.map.baidu.com/routematrix/v2/driving";
+    private static final String ak = "pzqWfSQ4MOs3zAPVeQFc9Ozwv8LRj6GI";
     private final static Logger logger = LoggerFactory.getLogger(BaiduMapClient.class);
 
     //TODO:任务3.2-调百度路径计算两点间的距离，和预估抵达时长
