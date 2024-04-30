@@ -3,20 +3,19 @@ package com.heima.notice.socket;
 
 import com.alibaba.fastjson.JSON;
 import com.heima.commons.constant.HtichConstants;
-import com.heima.commons.domin.vo.response.ResponseVO;
 import com.heima.commons.entity.SessionContext;
-import com.heima.commons.enums.BusinessErrors;
 import com.heima.commons.helper.RedisSessionHelper;
 import com.heima.commons.utils.SpringUtil;
+import com.heima.modules.po.StrokePO;
 import com.heima.modules.vo.NoticeVO;
 import com.heima.notice.handler.NoticeHandler;
-import org.apache.commons.lang3.StringUtils;
+import com.heima.notice.service.StrokeAPIService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,17 +30,24 @@ public class WebSocketServer {
     //key是accountId，可以通过本类中的getAccountId方法获取到，value是session
     public final static Map<String, Session> sessionPools = new ConcurrentHashMap<>();
 
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
+
     /*
         用户发送ws消息，message为json格式{'receiverId':'接收人','tripId':'行程id','message':'消息内容'}
     */
     @OnMessage
     public void onMessage(Session session, String message) {
-        String accountId = getAccountId(session);
-
-
+        NoticeVO noticeVO = JSON.parseObject(message, NoticeVO.class);
+        // 获取行程发布人的id
+        StrokeAPIService strokeAPIService = SpringUtil.getBean(StrokeAPIService.class);
+        StrokePO strokePO = strokeAPIService.selectByID(noticeVO.getTripId());
+        // 消息接收者id = 行程发布者id
+        noticeVO.setReceiverId(strokePO.getPublisherId());
+        // 消息发送者id = 当前session中的Id
+        noticeVO.setSenderId(getAccountId(session));
         //设置相关消息内容并存入mongodb：noticeHandler.saveNotice(noticeVO);
-
-
+        NoticeHandler noticeHandler = SpringUtil.getBean(NoticeHandler.class);
+        noticeHandler.saveNotice(noticeVO);
     }
 
 
@@ -53,7 +59,8 @@ public class WebSocketServer {
      */
     @OnOpen
     public void onOpen(Session session) {
-
+        logger.info("客户端连接成功 id:{}", getAccountId(session));
+        sessionPools.put(getAccountId(session), session);
     }
 
     /**
@@ -63,7 +70,8 @@ public class WebSocketServer {
      */
     @OnClose
     public void onClose(Session session) {
-
+        logger.info("客户端断开连接 id:{}", getAccountId(session));
+        sessionPools.remove(getAccountId(session));
     }
 
 
