@@ -38,7 +38,7 @@ WS message push
 
 ## 2.Application renderings
 
-![carpool_1](.\assets\carpool_1.png)
+![carpool_1](assets/carpool_1.png)
 
 
 
