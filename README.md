@@ -1,12 +1,70 @@
 # Carpool
 
+## 1.Introduce
+
+### 1.a.Program introduction
+
 In the same city carpooling software, drivers and passengers can post itineraries, and the system will match similar routes.
 
 The driver invites the passenger to go with him. After the passenger agrees, an order is formed. After delivery, the passenger pays the driver face to face and the transaction is completed.
 
 
 
-## 1. Config docker
+### 1.b.Technology 
+
+SpringCloud + Nacos + Sentinel + Seata + Redis + MongoDB + RabbitMQ + WebSocket + OpenFeign
+
+
+
+### 1.c.Project Highlights
+
+Third-party service interface docking scenario
+
+- **By docking with Baidu AI, location calculation, path calculation, real-name authentication and automatic recognition of license plate information are realized**
+
+Technical implementation of location information
+
+- **Implement GEO coordinate calculation based on Redis to accurately calculate the matching degree between the user's itinerary and the driver's itinerary**
+
+Timeout scenario
+
+- **Set up a dead letter message queue through RabbitMQ to implement the function that when a car owner invites a passenger and the passenger does not respond for a long time, the system will automatically cancel the invitation**
+
+WS message push
+
+- **Drivers and users send and receive real-time messages through WebSocket, and use MongoDB to persistently store messages, realizing the function of instant messaging.**
+
+
+
+## 2.Application renderings
+
+![carpool_1](.\assets\carpool_1.png)
+
+
+
+![carpool_1](.\assets\carpool_2.png)
+
+
+
+![carpool_1](.\assets\carpool_3.png)
+
+
+
+![carpool_1](.\assets\carpool_4.png)
+
+
+
+![carpool_1](.\assets\carpool_5.png)
+
+
+
+![carpool_1](.\assets\carpool_6.png)
+
+
+
+## 3.Config env
+
+### 3.a.Config docker
 
 **mysql**
 
@@ -99,13 +157,13 @@ mongo:4.4
 
 
 
-## 2. Config backend
+### 3.b.Config backend
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/63a3c2498b244e798d07a14a178f943e.png)
 
 
 
-### 2.1. Structure
+#### 3.b.1.Structure
 
 **Backend**: Springcloud microservice architecture, providing interfaces required by the frontend
 
@@ -123,13 +181,13 @@ mongo:4.4
 
 
 
-### 2.2. Start backend
+#### 3.b.2.Start backend
 
 Modify the corresponding IP and password in the yml files under all projects
 
 
 
-### 2.3. Start frontend
+#### 3.b.3.Start frontend
 
 Download and install Openresty or Nginx locally
 
