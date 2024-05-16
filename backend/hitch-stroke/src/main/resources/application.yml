@@ -49,7 +49,7 @@ spring:
       database: location
 baidu:
   map:
-    ak: pzqWfSQ4MOs3zAPVeQFc9Ozwv8LRj6GI
+    ak: # need to apply
     api: https://api.map.baidu.com/routematrix/v2/driving
 
 #logging:
